@@ -53,6 +53,7 @@ model Store {
   ownerId   String
   isActive  Boolean  @default(true)
   isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
 
   owner     User     @relation(fields: [ownerId], references: [id])
   products  Product[]
