@@ -3,6 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import authRoutes from "./models/auth/auth.routes";
+import storeRoutes from "./models/store/store.routes";
 
 const app = express();
 
@@ -15,6 +16,6 @@ app.use(helmet());
 app.use(morgan("dev"));
 
 app.use("/api/auth", authRoutes);
-app.user;
+app.use("/api/stores", storeRoutes);
 
 export default app;
