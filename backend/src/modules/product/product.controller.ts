@@ -24,8 +24,8 @@ export const productController = {
     );
     res.json(products);
   },
-  async upadate(req: AuthRequest, res: Response) {
-    const product = await productService.updatePrduct(
+  async update(req: AuthRequest, res: Response) {
+    const product = await productService.updateProduct(
       req.params.productId,
       req.user.id,
       req.body,

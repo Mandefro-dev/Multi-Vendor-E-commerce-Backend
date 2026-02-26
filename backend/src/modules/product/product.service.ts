@@ -38,7 +38,7 @@ export const productService = {
     const skip = (page - 1) * limit;
     return productRepository.findByStore(storeId, skip, limit);
   },
-  async updatePrduct(productId: string, vendorId: string, data: any) {
+  async updateProduct(productId: string, vendorId: string, data: any) {
     const product = await productRepository.findById(productId);
     if (!product) {
       throw new Error("Product not found");
