@@ -16,11 +16,32 @@ export const productController = {
   },
   async getStoreProducts(req: AuthRequest, res: Response) {
     const { page, limit } = req.query;
-    const product = await productService.getStoreProduct(
+    const products = await productService.getStoreProduct(
       req.params.storeId as string,
       req.user.id,
       Number(page) || 1,
       Number(limit) || 10,
     );
+    res.json(products);
+  },
+  async upadate(req: AuthRequest, res: Response) {
+    const product = await productService.updatePrduct(
+      req.params.productId,
+      req.user.id,
+      req.body,
+    );
+    res.json({
+      message: "updated successfully.",
+      product,
+    });
+  },
+  async remove(req: AuthRequest, res: Response) {
+    await productService.deleteProduct(
+      req.params.productId as string,
+      req.user.id,
+    );
+    res.json({
+      message: "Deleted successfully",
+    });
   },
 };
