@@ -2,8 +2,8 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import authRoutes from "./models/auth/auth.routes";
-import storeRoutes from "./models/store/store.routes";
+import authRoutes from "./modules/auth/auth.routes";
+import storeRoutes from "./modules/store/store.routes";
 
 const app = express();
 

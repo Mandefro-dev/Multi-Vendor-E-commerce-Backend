@@ -63,16 +63,19 @@ model Product {
   id          String   @id @default(uuid())
   name        String
   description String
-  price       Float
-  stock       Int
-  isDeleted   Boolean  @default(false)
-
+  price       Decimal  @db.Decimal(10,2)
+  stock       Int 
   storeId     String
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   categoryId  String?
 
   store       Store    @relation(fields: [storeId], references: [id])
   category    Category? @relation(fields: [categoryId], references: [id])
-
+  @@index([storeId])
+  @@index([isDeleted])
   orderItems  OrderItem[]
   reviews     Review[]
 }
