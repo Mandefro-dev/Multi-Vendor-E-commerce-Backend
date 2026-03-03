@@ -25,5 +25,11 @@ router.delete(
   requireRole("VENDOR"),
   productController.remove,
 );
+router.get(
+  "/advanced",
+  requireAuth,
+  requireRole("VENDOR"),
+  productController.getAdvanced,
+);
 
 export default router;

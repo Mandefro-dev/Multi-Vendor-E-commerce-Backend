@@ -115,6 +115,7 @@ model OrderItem {
   orderId         String
   productId       String
   quantity        Int
+  price           Decimal @db.Decimal(10,2)
   priceAtPurchase Float
 
   order   Order   @relation(fields: [orderId], references: [id])
@@ -148,10 +149,11 @@ model Coupon {
   id            String       @id @default(uuid())
   code          String       @unique
   discountType  DiscountType
-  discountValue Float
+  discountPct   Float
   expiryDate    DateTime
   usageLimit    Int
   usedCount     Int          @default(0)
   minOrderAmount Float
   isActive      Boolean      @default(true)
+  expiresAt     DateTime?
 }

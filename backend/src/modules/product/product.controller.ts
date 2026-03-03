@@ -1,6 +1,7 @@
 import { Response } from "express";
 import { AuthRequest } from "../../middlewares/requireAuth";
 import { productService } from "./product.service";
+import { advancedQuery } from "./product.repository";
 
 export const productController = {
   async create(req: AuthRequest, res: Response) {
@@ -23,6 +24,30 @@ export const productController = {
       Number(limit) || 10,
     );
     res.json(products);
+  },
+  async getAdvanced(req: AuthRequest, res: Response) {
+    const {
+      page,
+      limit,
+      minPrice,
+      maxPrice,
+      catagoryId,
+      search,
+      sortBy,
+      sortOrder,
+    } = req.query;
+
+    const result = await advancedQuery(req.params.storeId as string, {
+      page: Number(page),
+      limit: Number(limit),
+      minPrice: minPrice ? Number(minPrice) : undefined,
+      maxPrice: maxPrice ? Number(maxPrice) : undefined,
+      categoryId: catagoryId as string,
+      search: search as string,
+      sortBy: sortBy as any,
+      sortOrder: sortOrder as any,
+    });
+    res.json(result);
   },
   async update(req: AuthRequest, res: Response) {
     const product = await productService.updateProduct(
