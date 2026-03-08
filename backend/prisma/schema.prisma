@@ -6,20 +6,19 @@
 
 generator client {
   provider = "prisma-client-js"
-
 }
 
 datasource db {
   provider = "postgresql"
-
-
 }
-enum Role{
+
+enum Role {
   ADMIN
   VENDOR
   CUSTOMER
 }
-enum OrderStatus{
+
+enum OrderStatus {
   PENDING
   PAID
   SHIPPED
@@ -27,24 +26,26 @@ enum OrderStatus{
   CANCELLED
   REFUNDED
 }
+
 enum DiscountType {
   PERCENT
   FIXED
-
 }
 
-model User{
-  id String @id @default(uuid())
-  name String
-  email String @unique
+model User {
+  id       String @id @default(uuid())
+  name     String
+  email    String @unique
   password String
-  role Role @default (CUSTOMER)
-  isDeleted Boolean @default(false)
-  createdAt  DateTime @default(now())
 
-  stores Store[]
-  orders Order[]
-  reviews Review[]
+  role      Role     @default(CUSTOMER)
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  stores       Store[]
+  orders       Order[]
+  reviews      Review[]
+  couponUsages CouponUsage[]
 }
 
 model Store {
@@ -55,38 +56,38 @@ model Store {
   isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  owner     User     @relation(fields: [ownerId], references: [id])
-  products  Product[]
+  owner    User      @relation(fields: [ownerId], references: [id])
+  products Product[]
 }
 
 model Product {
   id          String   @id @default(uuid())
   name        String
   description String?
-  price       Decimal  @db.Decimal(10,2)
-  stock       Int 
+  price       Decimal  @db.Decimal(10, 2)
+  stock       Int
   storeId     String
   rating      Float    @default(0)
   isDeleted   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  categoryId  String?
+  categoryId String?
 
-  store       Store    @relation(fields: [storeId], references: [id])
-  category    Category? @relation(fields: [categoryId], references: [id])
+  store      Store       @relation(fields: [storeId], references: [id])
+  category   Category?   @relation(fields: [categoryId], references: [id])
+  orderItems OrderItem[]
+  reviews    Review[]
 
   @@index([storeId])
   @@index([categoryId])
   @@index([price])
   @@index([name])
   @@index([isDeleted])
-  orderItems  OrderItem[]
-  reviews     Review[]
 }
 
 model Category {
-  id       String     @id @default(uuid())
+  id       String  @id @default(uuid())
   name     String
   parentId String?
 
@@ -96,26 +97,29 @@ model Category {
   products Product[]
 }
 
-
 model Order {
-  id          String       @id @default(uuid())
+  id          String      @id @default(uuid())
   userId      String
-  status      OrderStatus  @default(PENDING)
+  status      OrderStatus @default(PENDING)
   totalAmount Float
-  createdAt   DateTime     @default(now())
+  createdAt   DateTime    @default(now())
 
-  user        User         @relation(fields: [userId], references: [id])
-  items       OrderItem[]
-  payment     Payment?
+  couponId String?
+
+  user    User        @relation(fields: [userId], references: [id])
+  items   OrderItem[]
+  payment Payment?
+
+  coupon       Coupon?       @relation(fields: [couponId], references: [id])
+  couponUsages CouponUsage[]
 }
-
 
 model OrderItem {
   id              String  @id @default(uuid())
   orderId         String
   productId       String
   quantity        Int
-  price           Decimal @db.Decimal(10,2)
+  price           Decimal @db.Decimal(10, 2)
   priceAtPurchase Float
 
   order   Order   @relation(fields: [orderId], references: [id])
@@ -123,37 +127,52 @@ model OrderItem {
 }
 
 model Payment {
-  id        String   @id @default(uuid())
-  orderId   String   @unique
-  amount    Float
-  status    String
-  provider  String
+  id       String @id @default(uuid())
+  orderId  String @unique
+  amount   Float
+  status   String
+  provider String
 
-  order     Order    @relation(fields: [orderId], references: [id])
+  order Order @relation(fields: [orderId], references: [id])
 }
 
-
 model Review {
-  id        String   @id @default(uuid())
-  rating    Int
-  comment   String
+  id      String @id @default(uuid())
+  rating  Int
+  comment String
 
   userId    String
   productId String
 
-  user      User     @relation(fields: [userId], references: [id])
-  product   Product  @relation(fields: [productId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
 }
 
 model Coupon {
-  id            String       @id @default(uuid())
-  code          String       @unique
-  discountType  DiscountType
-  discountPct   Float
-  expiryDate    DateTime
-  usageLimit    Int
-  usedCount     Int          @default(0)
+  id             String        @id @default(uuid())
+  code           String        @unique
+  discountType   DiscountType
+  discountPct    Float
+  expiryDate     DateTime
+  usageLimit     Int
+  usedCount      Int           @default(0)
   minOrderAmount Float
-  isActive      Boolean      @default(true)
-  expiresAt     DateTime?
+  isActive       Boolean       @default(true)
+  expiresAt      DateTime?
+  orders         Order[]
+  couponUsages   CouponUsage[]
+}
+
+model CouponUsage {
+  id       String   @id @default(uuid())
+  userId   String
+  couponId String
+  orderId  String
+  usedAt   DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  coupon Coupon @relation(fields: [couponId], references: [id])
+  order  Order  @relation(fields: [orderId], references: [id])
+
+  @@unique([userId, couponId])
 }
