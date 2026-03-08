@@ -1,84 +1,65 @@
-import { Decimal } from "@prisma/client/runtime/client";
-import { prisma } from "../../config/prisma";
-import { Prisma } from "@prisma/client";
-
-interface OrderInput {
-  items: {
-    productId: string;
-    quantity: number;
-  }[];
-  couponCode?: string;
-}
+import { prisma } from "../config/prisma";
+import { couponService } from "./coupon.service";
+import { calculateDiscount } from "../utils/calculate-discount";
 
 export const orderService = {
-  async createOrder(userId: string, input: OrderInput) {
+  async createOrder(userId: string, items: any[], couponCode?: string) {
     return prisma.$transaction(async (tx) => {
-      let total = new Prisma.Decimal(0);
-      const productIds = input.items.map((i) => i.productId);
-      const products = await tx.product.findMany({
-        where: {
-          id: {
-            in: productIds,
-          },
-          isDeleted: false,
-        },
-      });
-      if (products.length !== productIds.length) {
-        throw new Error("One or more products not found");
-      }
-      for (const item of input.items) {
-        const product = products.find((p) => p.id === item.productId);
+      let total = 0;
+      const products = [];
+
+      for (const item of items) {
+        const product = await tx.product.findUnique({
+          where: { id: item.productId },
+        });
 
         if (!product) throw new Error("Product not found");
-        if (product.stock < item.quantity) {
-          throw new Error(`Insufficent stock for ${product.name}`);
-        }
 
-        total = total.plus(product.price.mul(item.quantity));
+        if (product.stock < item.quantity)
+          throw new Error("Insufficient stock");
+
+        total += product.price * item.quantity;
+
+        products.push(product);
       }
 
-      if (input.couponCode) {
-        const coupon = await tx.coupon.findUnique({
-          where: {
-            code: input.couponCode,
-          },
-        });
-        if (
-          !coupon ||
-          !coupon.isActive ||
-          (coupon.expiresAt && coupon.expiresAt < new Date())
-        ) {
-          throw new Error("Invalid or expired coupon");
-        }
-        const discount = total.mul(coupon.discountPct / 10);
-        total = total.minus(discount);
+      let discount = 0;
+      let coupon = null;
+
+      if (couponCode) {
+        coupon = await couponService.validateCoupon(
+          tx,
+          couponCode,
+          userId,
+          total,
+        );
+
+        discount = calculateDiscount(coupon, total);
+
+        total -= discount;
       }
-      //create order
+
       const order = await tx.order.create({
         data: {
           userId,
           totalAmount: total,
+          couponId: coupon?.id,
         },
       });
 
-      for (const item of input.items) {
-        const product = products.find((p) => p.id === item.productId)!;
-
-        await tx.orderItem.create({
+      if (coupon) {
+        await tx.coupon.update({
+          where: { id: coupon.id },
           data: {
-            orderId: order.id,
-            productId: product.id,
-            quantity: item.quantity,
-            price: product.price,
+            usedCount: { increment: 1 },
           },
         });
 
-        await tx.product.update({
-          where: { id: product.id },
+        await tx.couponUsage.create({
           data: {
-            stock: {
-              decrement: item.quantity,
-            },
+            userId,
+            couponId: coupon.id,
+            orderId: order.id,
           },
         });
       }
